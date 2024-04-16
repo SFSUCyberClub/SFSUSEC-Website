@@ -1,12 +1,30 @@
 ---
 layout: default
-title: SFSU Cyber Security Club
+title: Android Reversing
+description: "by devilmanCr0" 
 ---
+
+# Welcome to Android 101 Reverse engineering
+
+After spending some time reviewing powerful tools to reverse engineer Android applications, I thought it would be nice
+to share this knowledge. I haven't been able to find good resources on debugging non-rooted phones, so in this guide, I will
+be providing further information on parts _others have left out_
+
+There are many open source tools on github, and I implore you learn more about them (as should i :P) - but for now, please try setting up the environment manually. I will try to create a docker image providing all the tools at some point.
+
+## Tools you'll need for the job
+
+
+
+
+
+
+
 
 Text can be **bold**, _italic_, ~~strikethrough~~ or `keyword`.
 
 [Link to another page](./another-page.html).
-[Link to resources](./resources/index.html)
+
 There should be whitespace between paragraphs.
 
 There should be whitespace between paragraphs. We recommend including a README, or a file with information about your project.

@@ -11,7 +11,6 @@
   </head>
 
   <body>
-
     <header>
       <div class="container">
         
@@ -23,11 +22,11 @@
 
         <div> 
           <a id="a-title" href="{{ '/' | relative_url }}">
-            <h1>SFSU Cyber Security Club</h1>
+            <h1>{{ page.title | default: "SFSU Cyber Security Club"}}</h1>
           </a>
           <div class="nav-links">
             <div>
-              <h2>Welcome to the matrix Neo</h2>
+              <h2>{{ page.description | default: "Welcome to the matrix Neo"}}</h2>
             </div>
             <div>
               {% if page.title == 'SFSU Cyber Security Club' %} 
