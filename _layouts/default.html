@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="{{ site.lang | default: "en-US" }}">
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
+    {% include head-custom.html %}
+
+{% seo %}
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        
+
+         
+        <div class="logo">
+          <img src="/assets/images/logo.png" alt="Logo" >
+        </div> 
+
+        <div> 
+          <a id="a-title" href="{{ '/' | relative_url }}">
+            <h1>SFSU Cyber Security Club</h1>
+          </a>
+          <div class="nav-links">
+            <div>
+              <h2>Welcome to the matrix Neo</h2>
+            </div>
+            <div>
+              {% if page.title == 'SFSU Cyber Security Club' %} 
+              <a href="#about"> About </a> 
+              <a href="#officers"> Officers </a> 
+              <a href="#schedule"> Schedule </a> 
+              <a href="#blog"> Blog </a> 
+              <a href="#resources"> Resources </a> 
+              {% endif %} 
+            </div>
+          </div>
+        </div>  
+
+
+      </div>
+    </header>
+
+    <div class="container">
+      <section id="main_content">
+        {{ content }}
+      </section>
+    </div>
+  </body>
+</html>
