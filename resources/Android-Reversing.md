@@ -21,6 +21,10 @@ There are many open source tools on github, and I implore you learn more about t
 - keytool
 - jarsigner 
     - you should have these* natively installed if you have JDK, but if you don't.. install your latest Java JDK
+- bettercap (optional)
+- Frida
+    - pip install Frida
+
 
 ### Theory
  Before we start taking apart our android phone, we need to understand the system's architecture
