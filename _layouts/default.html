@@ -22,7 +22,22 @@
 
         <div> 
           <a id="a-title" href="{{ '/' | relative_url }}">
-            <h1>{{ page.title | default: "SFSU Cyber Security Club"}}</h1>
+            <h1>
+            <!-- lol -->
+            {% assign count = 1 %}
+            {% assign letterarray = page.title | split:'' %}
+            {% for letter in letterarray %}
+                {% if count == 0 %}
+                        <span id="purple">{{ letter }}</span>
+                        {% assign count = 1 %}
+                {% elsif count == 1 %}
+                        <span id="yellow">{{ letter }}</span>
+                        {% assign count = 0 %}
+                {% endif %}
+            {% endfor %}
+            </h1>
+        
+            <!--h1>{{ page.title | default: "SFSU Cyber Security Club"}}</h1-->
           </a>
           <div class="nav-links">
             <div>

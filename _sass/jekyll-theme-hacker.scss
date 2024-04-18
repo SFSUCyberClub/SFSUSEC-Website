@@ -83,6 +83,24 @@ header .container{
   gap: 10%;
 }
 
+#green {
+  color: rgb(68, 223, 21)
+}
+
+#yellow {
+  color: yellow
+}
+
+#purple {
+  color: rgb(180, 0, 180)
+}
+
+h1 span {
+        display: inline-block;
+        margin: -15px;
+
+}
+
 a {
         padding-left: 5px;
         padding-right: 5px;

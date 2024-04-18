@@ -186,6 +186,7 @@ to be installed on an android's system
 You can use openssl like so to read more information about the public key issuer
 `openssl pkcs7 -in META-INF/CERT.RSA -inform DER -print`
 
+<div id="manifest"></div>
 Apps need to be signed by the author for integrity using a digital certificate. Almost similar to 
 the certificates hear about from https, but only used to validate one end. For non-system/priviledged apps, the
 android system doesn't compare the certificate with its root authorities. We will come back to this later for further explanation
@@ -279,6 +280,9 @@ we're able to use Frida. Because we're specifically working with a **non-rooted*
 "Gadget", which is essentially going to act as another native binary that gets sideloaded when [libDoodleJump.so](#libDoodle)
 gets called. Below is a control flow graph I made to show Doodle Jump's execution flow with Frida loaded.
 
+>> Make sure to use the decoded APK that we got from apktool earlier. If you're following along, we're going to be using 
+>> that to repack the content and send it off to our Fode *Phone*
+
 ![FridaGadget](../assets/images/android-reversing/android-fridagadget.png)
 
 In order to sideload `libDoodleJump.so`, we should first understand that ELF binaries dynamically link to other binaries when
@@ -301,7 +305,6 @@ gadget version (because sometimes it may not work depending on the API level), t
 wget https://github.com/frida/frida/releases/download/16.2.1/frida-core-devkit-16.2.1-android-arm64.tar.xz 
 unxz frida-gadget-16.2.1-arm64.so.xz
 ```
-
 Move this gadget to our lib native folder
 
 ```
@@ -313,6 +316,79 @@ help use inject this library easily using three lines of python. This library is
 and useful.
 
 ```python
+import lief
 
+libnative = lief.parse("libDoodleJump.so")
+libnative.add_library("libfrida-gadget.so") # inject
+libnative.write("libDoodleJump.so")
 
+# Reference - https://fadeevab.com
 ```
+
+After performing this injection, try running `readelf -d libDoodleJump.so` again, you'll see frida-gadget.so as part of the 
+linked library list.
+
+![FridaGadget](../assets/images/android-reversing/android-elfafter.png)
+
+With that, we can finally repackage our apk and install it back to our phone.
+
+## Repackaging our APK
+
+Now to repack our APK, you remember [when we decoded/decompressed our APK using apktool?](#unmangled). We're going to be using
+apktool again to repack our apk back to it's original format.
+
+Once you have everything in place, the command is as simple as running
+`apktool b <folder>`
+
+The output will be generated in \<folder\>/dist
+
+Make sure to put it in a new folder where you can have a clean workplace for the next steps...
+
+## Signing our APK
+
+We can't install our apk to android yet because of what we mentionned earlier about the [Manifest file](#manifest).
+We modified the contents of the apk, so we need to go through the process of generating a signature and re-signing all
+the files. Android does not care for who signs the app, it just needs it signed so that it can validate integrity in the App Store.
+
+The process is annoying, so below are a set of commands that you can run to sign your apk! Newer requirements need an additional
+signing step which I have also provided.
+```sh
+# 1. This generates our certificate, and will prompt you for key issuer information, so just fill it out with random info
+# In my certificate, I simply filled everything out with the word 'password' so I don't have to worry about forgetting
+keytool -genkey -v -keystore my-release-key.keystore -alias alias_name -keyalg RSA -keysize 2048 -validity 10000
+# 2. this will start signing base.apk and re-digesting the files, including the ones we modified
+jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore my-release-key.keystore base.apk alias_name
+# 3. part of android tools, this will is the first phase of signing
+zipalign -v 4 new_base.apk signed_base.apk
+# 4. convert the certificate you created earlier into a jks format for the next phase of signing
+keytool -importkeystore -srckeystore my-release-key.keystore -destkeystore keystore.jks -deststoretype jks
+# 5. second and last phase of key signing, use android tool's apksigner and your jks formatted certificate to finally sign it off!
+apksigner sign --ks keystore.jks --ks-key-alias alias_name --ks-pass pass:password --key-pass pass:password signed_base.apk
+# The completely signed apk will be called signed_base.apk
+```
+
+You finally have your signed apk and you can install it to your android phone.
+>> Make sure to uninstall the original app on the phone
+
+Then it's just `adb install signed_apk` from there!
+
+But now to see if Frida actually works, we'll need to start the app on our phone.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Implement a script to modify the app's variable and see real-time effects.
+<script src="https://asciinema.org/a/TzuMMo3384weXrz08CtUQ6ydc.js" id="asciicast-654902" async="true"></script>
+
