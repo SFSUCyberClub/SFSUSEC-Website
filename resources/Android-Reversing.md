@@ -27,7 +27,8 @@ jumping platformer that you can control with your phone's gyroscope. The goal is
 - bettercap (optional)
 - Frida
     - pip install Frida
-
+- [jadx](https://github.com/skylot/jadx)
+- [ghidra](https://github.com/NationalSecurityAgency/ghidra)
 
 ### Theory
  Before we start taking apart our android phone, we need to understand the system's architecture
@@ -96,13 +97,20 @@ Source -> [https://mobisec.reyammer.io/slides](https://mobisec.reyammer.io/slide
 * * * 
 
 With some of these fundementals out of the way, let's get started with retrieving Doodle Jump from our phone. 
->> Make sure to enable USB debugging in the [developer settings](https://developer.android.com/studio/debug/dev-options)
->> Make sure to use a USB Micro cable with a data line
+>> Make sure to enable USB debugging in the [developer settings].(https://developer.android.com/studio/debug/dev-options)
+>> and make sure to use a USB Micro cable with a data line.
 
 ## Using ADB
 
 Our first tool for teh job is called ADB. Integrated by Google for app developers, this tool allows you to interface between your
-device and host machine. We can use ADB to our advantage when we want to retrieve, install, or modify apps. Since we're going to be taking apart an app from the phone, we're going to use `adb pull` to retrieve it.
+device and host machine. We can use ADB to our advantage when we want to retrieve, install, or modify apps. 
+
+To start it up, you will need to run any command for adb, provided that your device is connected and ready. 
+`sudo adb devices` (run with sudo to prevent unauthorized error)
+
+This will list out any connected android devices (your phone might ask for further permission from the user to accept the host machine's request for connection).
+
+Since we're going to be taking apart an app from the phone, we're going to use `adb pull` to retrieve it.
 
 Before we do that, however, we should first find where it's located within our phone's filesystem.
 - Run `adb shell pm list packages` to list the full package name of each app registered on your android.
@@ -114,34 +122,57 @@ Once you have the full path, you'll see a 'base.apk' file at the end of it. This
 
 _Note for future reference_ - If for some reason you mysteriously encounter a "no such file or directory error" despite properly addressing the path, you may want to try entering your android's shell with `adb shell`, copying the base.apk elsewhere (like /sdcard/) (while you're in the android shell) `adb cp <original path of base.apk> /sdcard/`, and trying `adb pull` again with the new path.
 
-## The Framework of an app
+## The framework of an app
 
 As we seen from the image above, an app is mostly comprised of java bytecode and c++ native libraries that the android system
 can understand and run. Let's talk about what apps are formatted in - APK
 
 An apk is essentially just a zipped package, you can extract all of its raw contents using
-unzip base.apk -d yourappsnamehere
+`unzip base.apk -d folderoutput`
 
-You'll find familiar names, but everything is going to be mangled so we'll need to use another tool for the job... 
+You will see a folder with *usually*, these subfolders in it.
+
+* AndroidManifest.xml
+
+A super important file dictating the properties and permissions of an app.
+Has information that will help identify many components of an app's behavior, and most importantly, specifies
+the first class that it will run. There are no entry points in the OOB of android app development, as
+different components run asynchronously from each other, but when an app needs to start for the first time, it will need a 
+"launcher" to jumpstart everything else. The android manifest file can be modified to provide interesting properties to an app, so I encourage you to check this on your own...
+
+Check out the [unmangled](#unmangled) version of AndroidManifest.xml in DoodleJump
+
+![manifest contents](../assets/images/android-reversing/manifest-launcher.png)
+
+The image above shows a declaration of the class that start when launching the app. Indicated by the red outlines, the class "MainActivity" is specified
+as the MAIN LAUNCHER.
 
 * /assests/*
-Usually contains the app's sprites or media to be preseted
+
+contains the app's sprites or media to be preseted
 
 * /res/*
-sometimes its custom styles etc
+
+used for custom styles in dimenstions, color, and various other components
+to the UI of the app.
 
 * /resources.arsc
-maps the resources to a numerical identify for the app to use
+
+maps the resources to a numerical identifier for the app to use
 
 * /classes.dex
-contains bytecode for the app that is the heart of the application
-usually compiled in java or kotlin, does not matter
+
+contains java bytecode (dalvik or ART encoded) for the app to run. Usually is the heart of the application
+and compiled in either java or kotlin, does not matter.
 
 * /libs/
-contents to execute native code, usually compiled in C or C++ for game engines or various
-other applications. ELF formatted and organized based off architecture.
+
+shared libraries to execute native code, usually compiled in C or C++ for game engines or various
+other applications. ELF formatted and organized based off architecture (there are duplicates of the same libraries to
+maintain portability).
 
 * /META-INF/
+
 A certificate folder in order to verify the validity and authenticity of the app before being able
 to be installed on an android's system
 
@@ -149,20 +180,98 @@ to be installed on an android's system
 * CERF.SF file, similar to MANIFEST.MF but signed with a RSA key instead
 * CERT.RSA file containing public key to sign apps and be verified by CERT.SF
 
-You can use openssl like so to read more information about the public key
-openssl pkcs7 -in META-INF/CERT.RSA -inform DER -print
+You can use openssl like so to read more information about the public key issuer
+`openssl pkcs7 -in META-INF/CERT.RSA -inform DER -print`
 
-this will tell you more about the issuer of the RSA key
+Apps need to be signed by the author for integrity using a digital certificate. Almost similar to 
+the certificates hear about from https, but only used to validate one end. For non-system/priviledged apps, the
+android system doesn't compare the certificate with its root authorities. We will come back to this later for further explanation
 
-Apps need to be signed for author integrity. You can think of the thing that's signing them as 
-a certificate, but only issued and validated by the author of the apk.
+![manifestlauncher](../assets/images/android-reversing/manifest-launcher.png)
 
 
+When you unzip an apk, you'll find the contents mentionned above, but everything is going to be mangled when you try reading some of it, so we'll need to use another tool for the job... 
+<div id="unmangled"></div>
 ## Using ApkTool
 
 ApkTool allows you to unzip apk packages while retaining the contents in human-readable form.
 
 ### Uncompress using ApkTool
+After retrieving your app from your phone using adb, use apktool on it like so.
+
+`apktool d base.apk`
+
+You will see the generated folder to be a little more organized than when we used unzip, and the AndroidManifest.xml file should now
+be readable.
+
+But what's also readable is the contents of the program itself! 
+
+Apktool will generate a more human readable version of the java bytecode called **smali**. 
+You can think of it as assembly for java, but a little more readable compared to actual cpu instructions.
+
+![smali](../assets/images/android-reversing/smali-code.png)
+
+__(This is smali assembly, feel old yet?)__
+
+Now to remind  you that this is not what Java's LVM sees when its processesing bytecode, it's simply 
+a visual construct. But if you think this is where the road stops for decompilation, you got another thing coming.
+
+(Make sure to perform this step as we'll come back to the apktool's decoded package later)
+
+## Using Jadx
+
+Jadx, unlike apktool, will completely decompile the byte code into Java lang. 
+
+Although jadx isn't immune to anti-debugging techniques and obfuscation, many android apps do not employ such 
+practices. Doodle jump, for example, has most of its symbols avaliable. 
+
+We can start by running the command `jadx-gui base.apk` to get the decompilation process going.
+
+![smali](../assets/images/android-reversing/android-jadx.png)
+
+__ using jadx's gui, you can lookup cross references of any given field with 'x', and search text fields under the 'Navigation' tab __
+
+Once it's finished, you'll see something like this. The names on the left indicate all the classes
+ that are loaded with the app. Most of these are the default classes that some developers add to their
+ app, but to find the specifics, we need to look into the com.limasky package. 
+
+ Opening one of the "MainActivity" classes, we see something unusual about this particular app,
+ in that it loads a native library directly upon launching. Denoted by
+`System.LoadLibrary("DoodleJump")`
+
+We should investigate this native library, which is located in the apk's lib folder. Depending on your phone's architecture, 
+you may need to choose either arm64 or armeabi, but most phones are arm64. So, with blind faith, we will be looking at the native library through this architecture.
+
+![lib](../assets/images/android-reversing/android-lib.png)
+![libdoodlejump](../assets/images/android-reversing/android-libDoodle.png)
+
+## Ghidra
+
+Ghidra is used for reversing and decompiling many binary types, so it comes to no surprise as being the most useful *free* tool for this
+particular scenario. We want to decompile the binary so that we can take a look at the function symbols (if there are any), and analyze any interesting code patterns. If you've never used ghidra before, we strongly advise to do a little bit of your own research __in the future we'll try to provide a ghidra workshop__. For now, I will assume that you know how to drag and drop a file to ghidra, start it up, and lookup function names once its done decompiling.
+
+
+![ghidra](../assets/images/android-reversing/android-ghidra.png)
+
+For Doodle Jump in particular, I tried to understand why it needed a native library. There were many functions, but many were unecessary to the game's functionality. I used the function filter at the bottom left to check for any functions prefixed as "Java_", as these are ones that are defined by the developer to be used as java methods __please fact check me on this__. 
+
+I found an interesting function symbolled "runGameLoop", which allowed me to quickly define an entry point to the next step..
+
+* * *
+
+## Static analysis recap and introduction to Frida
+
+So far we've covered tools on how to retrieve phone apps, open them up, and read their code. But what if we want to **debug** the app during runtime? This introduces us to dynamic analysis and the process of hooking functions to observe their states in realtime. In this section, we'll be covering the crucifix of debugging apps on a non-rooted phone by using a powerful instrumentation library called **Frida**. This library has many components to it, and although useful outside the context of android, we're going to use it to do the following.
+
+* Hook the native library with our Frida "Gadget".
+* Implement a script to analyze the app's runtime state.
+* Implement a script to modify the app's variable and see real-time effects.
+* Create a Java hook, defined in JS, and inject it into our function.
+* Create a native library hook, defined in C, and inject it into our function.
+* Provide further resources on advanced Frida API Usage. 
+
+For this particular exercise with Doodle Jump, we're going to do more with our Android app and modify our apk so that 
+we're able to use Frida.
 
 
 
