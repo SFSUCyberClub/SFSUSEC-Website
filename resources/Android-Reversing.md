@@ -29,6 +29,9 @@ jumping platformer that you can control with your phone's gyroscope. The goal is
     - pip install Frida
 - [jadx](https://github.com/skylot/jadx)
 - [ghidra](https://github.com/NationalSecurityAgency/ghidra)
+- LIEF
+    - pip install lief
+
 
 ### Theory
  Before we start taking apart our android phone, we need to understand the system's architecture
@@ -274,8 +277,42 @@ So far we've covered tools on how to retrieve phone apps, open them up, and read
 For this particular exercise with Doodle Jump, we're going to do more with our Android app and modify our apk so that 
 we're able to use Frida. Because we're specifically working with a **non-rooted** android phone, we need to use a Frida
 "Gadget", which is essentially going to act as another native binary that gets sideloaded when [libDoodleJump.so](#libDoodle)
-gets called
-
-
+gets called. Below is a control flow graph I made to show Doodle Jump's execution flow with Frida loaded.
 
 ![FridaGadget](../assets/images/android-reversing/android-fridagadget.png)
+
+In order to sideload `libDoodleJump.so`, we should first understand that ELF binaries dynamically link to other binaries when
+**referring to a function that does not exist**. For example in C, when I use `printf`, this is going to be referenced by the standard library, so whatever program we make out of that function call will dynamically link to it. Let's take a further look at what I mean. 
+
+Go to lib/arm64-v8a/ and run
+`readelf -d libDoodleJump.so`
+
+You will see the following at the top.
+
+
+![FridaGadget](../assets/images/android-reversing/android-elfbefore.png)
+
+You can see that doodle jump loads additional native libraries to run its main one, so the idea is to inject our frida shared library to this binary to complete the sideload.
+
+For this code snippet, you could either just download the gadget binary like I did or if you're looking for a particular 
+gadget version (because sometimes it may not work depending on the API level), try [going here for the latest releases](https://github.com/frida/frida/releases)
+
+```
+wget https://github.com/frida/frida/releases/download/16.2.1/frida-core-devkit-16.2.1-android-arm64.tar.xz 
+unxz frida-gadget-16.2.1-arm64.so.xz
+```
+
+Move this gadget to our lib native folder
+
+```
+mv frida-gadget-16.2.1-arm64.so path/to/lib/arm64-v8a/libfrida-gadget.so
+```
+
+Now to modify libDoodleJump.so to sideload libfrida-gadget.so. We're going to be using an ELF parser that will
+help use inject this library easily using three lines of python. This library is called LIEF, and it's relatively straightforward 
+and useful.
+
+```python
+
+
+```
