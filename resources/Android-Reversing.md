@@ -242,6 +242,7 @@ Once it's finished, you'll see something like this. The names on the left indica
 We should investigate this native library, which is located in the apk's lib folder. Depending on your phone's architecture, 
 you may need to choose either arm64 or armeabi, but most phones are arm64. So, with blind faith, we will be looking at the native library through this architecture.
 
+<div id="libDoodle"></div>
 ![lib](../assets/images/android-reversing/android-lib.png)
 ![libdoodlejump](../assets/images/android-reversing/android-libDoodle.png)
 
@@ -271,8 +272,10 @@ So far we've covered tools on how to retrieve phone apps, open them up, and read
 * Provide further resources on advanced Frida API Usage. 
 
 For this particular exercise with Doodle Jump, we're going to do more with our Android app and modify our apk so that 
-we're able to use Frida.
+we're able to use Frida. Because we're specifically working with a **non-rooted** android phone, we need to use a Frida
+"Gadget", which is essentially going to act as another native binary that gets sideloaded when [libDoodleJump.so](#libDoodle)
+gets called
 
 
 
-
+![FridaGadget](../assets/images/android-reversing/android-fridagadget.png)
