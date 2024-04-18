@@ -12,6 +12,9 @@ be providing further information on parts _others have left out_
 
 There are many open source tools on github, and I implore you learn more about them (as should i :P) - but for now, please try setting up the environment manually. I will try to create a docker image providing all the tools at some point.
 
+For the sake of simplicity and fundementals, we will spend time reverse engineering Doodle Jump - ever heard of it? You play as a
+jumping platformer that you can control with your phone's gyroscope. The goal is to get as high up as you can.
+
 ## Tools you'll need for the job
 - adb
 - zipalign
@@ -20,7 +23,7 @@ There are many open source tools on github, and I implore you learn more about t
 - [apktool](https://apktool.org)
 - keytool
 - jarsigner 
-    - you should have these* natively installed if you have JDK, but if you don't.. install your latest Java JDK
+    - you should have these* natively installed if you have a Java JDK
 - bettercap (optional)
 - Frida
     - pip install Frida
@@ -31,8 +34,8 @@ There are many open source tools on github, and I implore you learn more about t
 ![Architecture](../assets/images/android-reversing/android-architecture.png)
 Source -> [https://mobisec.reyammer.io/slides](https://mobisec.reyammer.io/slides)
 
-### Android apps do not have a single entry point, but rather multiple depending on user actions. AKA there is no "main"
-### These are the objects that contain entry points based off particular actions
+### Android apps do not have a single entry point, but rather multiple depending on user actions. AKA there is no "main".
+### The following are objects that contain entry points based off particular actions.
 ### Every object type also has a life cycle that is clearly defined by google's smoogles [documentation](https://developer.android.com/guide/components/activities/activity-lifecycle)
 
 * Activity  
@@ -47,12 +50,12 @@ ing that does not need to run in the foreground
 Whenever there is a broadcasted event issued by android, the app can receive it 
 and respond to it using this object class that defines what action needs to be p
 erformed during such event. They are initialized when the user starts the applic
-ation for the first time. They persist even after phone restart unless the user 
+ation for the first time. They persist even after the phone restarts unless the user 
 manually disables them.
 
 * Content Provider 
-An abstact layer that handles retrieval and trasmission of data from the app's d
-atabase. Usually these databases are structured as an SQLite
+An abstact layer that handles retrieval and trasmission of data from the app's database.
+Usually these databases are structured with SQLite.
 
 * Intents 
 When applications want their components/other applications to communicate with each other, they can
@@ -62,14 +65,14 @@ When applications want their components/other applications to communicate with e
 |
 - Explicit -> specifies the exact full package name of the component that it wants to communicate to
 - Implicit -> a generic intent that can be picked up by any other avaliable service.
-
+Intents are used in almost all components of an app, so this one's especially important.
 
 Each version of android is identified by a number known as an "API level"
 If an app requires a minimum API level of, say, 31, then your android build
 will have to be an API level >= !
 
 Most apps will have their minimum API level set pretty low relative to the latest version, but 
-they will also provide information on what API version they were designed for.
+they will also provide information on what API version they were designed for - known as the target API.
 
 ### Android's Managers
 
@@ -77,26 +80,39 @@ Shown in the picture above, Android is built off of the Linux core. However, whe
 sensitive/special information that is device-specific, such as your smartphone, android uses a special 
 component called a "Manager" that resides in the userspace
 
-An example would be your phone's app location - something that is exclusive to your phone
+An example would be your phone's app location - something that is exclusive to your phone's capability of obtaining.
 An app would invoke the android api through this manager, but while doing so, would still be within the sandbox due to the "Manager" also being in userspace. Manager tends to behave
-like its own app, but with slightly higher privileges due to containing sensitive data.
+like its own app, but with slightly higher privileges.
 
 Behind the scenes, this interprocess communication is administered by a IPC/RPC called Binder
 Intents are defined by binder calls, so Apps use them when they want to communicate with these "Managers", and really any other app.
 
-And with IPC/RPC communication, a special device driver that uses ioctl transfers communication between the userspace-unprivileged and the
-userspace-privileged
-See image below, and here's more information on what a [device driver](https://en.wikipedia.org/wiki/Device_driver) if you're starting fresh.
+And with IPC/RPC communication, a special device driver in the kernel uses ioctl to administer communication between the userspace-unprivileged and the userspace-privileged
+See image below, and here's more information on what a [device driver](https://en.wikipedia.org/wiki/Device_driver) is if you're starting fresh.
 
 ![RPC](../assets/images/android-reversing/android-RPC.png)
 Source -> [https://mobisec.reyammer.io/slides](https://mobisec.reyammer.io/slides)
 
 * * * 
 
+With some of these fundementals out of the way, let's get started with retrieving Doodle Jump from our phone. 
+>> Make sure to enable USB debugging in the [developer settings](https://developer.android.com/studio/debug/dev-options)
+>> Make sure to use a USB Micro cable with a data line
+
 ## Using ADB
 
-Our first tool for teh job is called ADB. It essentially lets you interact with the component so that you 
+Our first tool for teh job is called ADB. Integrated by Google for app developers, this tool allows you to interface between your
+device and host machine. We can use ADB to our advantage when we want to retrieve, install, or modify apps. Since we're going to be taking apart an app from the phone, we're going to use `adb pull` to retrieve it.
 
+Before we do that, however, we should first find where it's located within our phone's filesystem.
+- Run `adb shell pm list packages` to list the full package name of each app registered on your android.
+  - Use `grep` so that you can filter down this list to the specific app you are looking for.
+- Run `adb shell pm path <package name>` to acquire the full path
+
+Once you have the full path, you'll see a 'base.apk' file at the end of it. This is quite literally your app, so go ahead and
+`adb pull <path of package> .` and you should be ready for the next step!
+
+_Note for future reference_ - If for some reason you mysteriously encounter a "no such file or directory error" despite properly addressing the path, you may want to try entering your android's shell with `adb shell`, copying the base.apk elsewhere (like /sdcard/) (while you're in the android shell) `adb cp <original path of base.apk> /sdcard/`, and trying `adb pull` again with the new path.
 
 ## The Framework of an app
 
@@ -142,126 +158,12 @@ Apps need to be signed for author integrity. You can think of the thing that's s
 a certificate, but only issued and validated by the author of the apk.
 
 
-Text can be **bold**, _italic_, ~~strikethrough~~ or `keyword`.
+## Using ApkTool
 
-[Link to another page](./another-page.html).
+ApkTool allows you to unzip apk packages while retaining the contents in human-readable form.
 
-There should be whitespace between paragraphs.
-
-There should be whitespace between paragraphs. We recommend including a README, or a file with information about your project.
-
-# Header 1
-
-This is a normal paragraph following a header. GitHub is a code hosting platform for version control and collaboration. It lets you and others work together on projects from anywhere.
-
-## Header 2
-
-> This is a blockquote following a header.
->
-> When something is important enough, you do it even if the odds are not in your favor.
-
-### Header 3
-
-```js
-// Javascript code with syntax highlighting.
-var fun = function lang(l) {
-  dateformat.i18n = require('./lang/' + l)
-  return true;
-}
-```
-
-```ruby
-# Ruby code with syntax highlighting
-GitHubPages::Dependencies.gems.each do |gem, version|
-  s.add_dependency(gem, "= #{version}")
-end
-```
-
-#### Header 4
-
-*   This is an unordered list following a header.
-*   This is an unordered list following a header.
-*   This is an unordered list following a header.
-
-##### Header 5
-
-1.  This is an ordered list following a header.
-2.  This is an ordered list following a header.
-3.  This is an ordered list following a header.
-
-###### Header 6
-
-| head1        | head two          | three |
-|:-------------|:------------------|:------|
-| ok           | good swedish fish | nice  |
-| out of stock | good and plenty   | nice  |
-| ok           | good `oreos`      | hmm   |
-| ok           | good `zoute` drop | yumm  |
-
-### There's a horizontal rule below this.
-
-* * *
-
-### Here is an unordered list:
-
-*   Item foo
-*   Item bar
-*   Item baz
-*   Item zip
-
-### And an ordered list:
-
-1.  Item one
-1.  Item two
-1.  Item three
-1.  Item four
-
-### And a nested list:
-
-- level 1 item
-  - level 2 item
-  - level 2 item
-    - level 3 item
-    - level 3 item
-- level 1 item
-  - level 2 item
-  - level 2 item
-  - level 2 item
-- level 1 item
-  - level 2 item
-  - level 2 item
-- level 1 item
-
-### Small image
-
-![Octocat](https://github.githubassets.com/images/icons/emoji/octocat.png)
-
-### Large image
-
-![Branching](https://guides.github.com/activities/hello-world/branching.png)
+### Uncompress using ApkTool
 
 
-### Definition lists can be used with HTML syntax.
-
-<dl>
-<dt>Name</dt>
-<dd>Godzilla</dd>
-<dt>Born</dt>
-<dd>1952</dd>
-<dt>Birthplace</dt>
-<dd>Japan</dd>
-<dt>Color</dt>
-<dd>Green</dd>
-</dl>
-
-```
-Long, single-line code blocks should not wrap. They should horizontally scroll if they are too long. This line should be long enough to demonstrate this.
-```
-
-```
-The final element.
-```
-
-Custom javascript
 
 
