@@ -1,6 +1,7 @@
 ---
 layout: default
-title:  Socials 
+title:  Socials
+permalink: /contact/
 ---
 
 ## [Discord](https://discord.com/invite/A7NtVeR6ek)
