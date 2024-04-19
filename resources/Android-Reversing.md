@@ -652,7 +652,7 @@ for the gator swamp. Thank you for reading this all the way through! Until again
 
 [securitygrind.com/ssl-pinning-bypass-with-frida-gadget-gadget-injector-py - Cristian R.](https://securitygrind.com/ssl-pinning-bypass-with-frida-gadget-gadget-injector-py)
 
-[codeshare.frida.re/browse - Frida](https://www.codeshare.frida.re/browse)
+[codeshare.frida.re/browse - Frida](https://codeshare.frida.re/browse)
 
 [fadeevab.com/frida-gadget-injection-on-android-no-root-2-methods/ - Alexandr Fadeev](https://fadeevab.com/frida-gadget-injection-on-android-no-root-2-methods/)
 
