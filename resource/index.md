@@ -4,6 +4,6 @@ title: Resources
 permalink: /resources/
 ---
 
-[Android Reversing]({{ site.baseurl }}android-reversing.html).
+[Android Reversing]({{ page.url | prepend: site.baseurl}}android-reversing).
 
 
