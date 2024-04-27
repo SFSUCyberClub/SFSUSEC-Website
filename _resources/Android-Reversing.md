@@ -2,7 +2,6 @@
 layout: default
 title: Android Reversing
 description: "by devilmanCr0"
-permalink: /resources/android-reversing
 ---
 
 # Welcome to Android 101 Reverse engineering

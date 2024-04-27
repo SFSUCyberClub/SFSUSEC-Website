@@ -5,8 +5,8 @@ google_analytics: false
 theme: jekyll-theme-hacker
 url: sfsucybersecurity.club
 # for resources collection
-#collections:
-#  blogs:
-#    output: true
-#    permalink: /blog/:title
-
+collections:
+  blogs:
+    output: true
+  resources:
+    output: true
