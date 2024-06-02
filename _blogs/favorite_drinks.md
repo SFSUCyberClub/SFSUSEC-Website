@@ -11,12 +11,16 @@ date: April 20, 2024
   - Fresh cranberries
   - Lime wedge and sugar for rim Ice
 
+  ![CCC](../assets/images/cocktails/christmas-cranberry-cocktail.png)
+
 # Penicillin Cocktail
   - 2 ounces blended scotch
   - 1/4 ounce Islay scotch
   - 3/4 ounce honey-ginger syrup
   - 3/4 ounce freshly squeezed lemon juice
   - 3 inch piece of ginger root, peeled and sliced
+
+  ![PC](../assets/images/cocktails/penicillin-cocktail.png)
 
 # Spiked Hot Apple Cider
   - 2 ounces spiced rum or brandy
@@ -26,6 +30,8 @@ date: April 20, 2024
   - star anise
   - twig of rosemary
   - cinnamon sticks
+
+  ![SHAC](../assets/images/cocktails/spiked-hot-apple-cider.png)
 # Censored in the Driveway
   - 2 ounces vodka or white rum
   - 1 ounce blue curacao
