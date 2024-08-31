@@ -320,3 +320,37 @@ a {
         width: 25%;
         height: auto;
 }
+
+
+// For the home page listing club members
+.profile-body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        background-color: #f0f0f0;
+}
+
+.profile-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+}
+
+.profile-top-row, .profile-bottom-row {
+        display: flex;
+        justify-content: center;
+}
+
+.profile-pic {
+        width: 230px;
+        height: 230px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin: 40px;
+}
+
+.profile-bottom-row {
+        margin-top: 40px;
+}
