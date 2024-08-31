@@ -137,12 +137,12 @@ header h2 {
 
 #downloads .btn {
   display: inline-block;
-  text-align: center;
-  margin: 0;
-}
+          text-align: center;
+          margin: 0;
+        }
 
-/* Main Content
-*/
+        /* Main Content
+        */
 
 #main_content {
   width: 100%;
@@ -348,9 +348,24 @@ a {
         height: 230px;
         border-radius: 50%;
         object-fit: cover;
-        margin: 40px;
+        margin: 20px;
+        margin-bottom: 5px;
+}
+
+
+.profile-item {
+    text-align: center;
+    margin: 0 10px;
+}
+
+.profile-text {
+        margin-top: 5px;
 }
 
 .profile-bottom-row {
-        margin-top: 40px;
+        margin-top: 20px;
+}
+
+.schedule {
+        border: 0
 }
