@@ -6,7 +6,7 @@ description: "by devilmanCr0"
 
 # A quick writeup for 2password, the first pwn challenge
 
-This is just a quick show of how format strings work, sice this challenge essentially focuses on performing a simple exploitation technique on linux GLIBC's "printf"
+This is just a quick blog to show how format strings work, sice this challenge essentially focuses on performing a simple exploitation technique on linux GLIBC's "printf"
 
 ## Format Strings
 
@@ -82,17 +82,25 @@ int main(void) {
 This challenge already loads the flag in memory, so if we  abuse this memory manipulation vulnerability, we can read its contents directly.
 
 Check the examples here so you can get a better idea of the available "format" strings for printf
+
 https://man7.org/linux/man-pages/man3/fprintf.3.html
 
 Here are the most useful for exploiting format strings
-
+```
 d signed integer
+
 u unsigned integer
+
 o octal
+
 x unsigned hexadecimal representation (32 bit)
+
 f floating number
+
 c character
+
 s string of characters (will dereference the addy!)
+
 p pointer address (good for 64 bit) <--- most important
 
 n (special format string that initializes the address its currently pointing to with the  length of the current string in the buffer - a very dangerous feature as this sole format string lets us write data in memory)
@@ -105,17 +113,19 @@ An example shown here demostrates how printf reveals its memory when susceptible
 input: %p %p %p %p %p %p %p
 
 RESULT: (nil), 1, 0x44412231, 0x7ffffcc2, 0xc0000000, (nil), (your input but in byte representation)
--=-------
+```
+
 You would essentialy be able to see where everything is in memory at that frame of reference, and you can specify the element in this list without the redundancy of inputting %p like so 
--=-------
+
+```
 input: %5$p
 
 RESULT: 0xc00000000 (using previous example's layout to show its convenience)
-
+```
 
 ## Exploitation
 
-Finally, putting it all together, if we input %p a few times into this chall, we will leak the flag as a long int. We can use python to quickly turn this into the original ascii text.
+Finally, putting it all together, if we input %p a few times into this chall, we will leak the flag, and it would show up as a long integer. We can use python to quickly turn this into the original ascii text.
 
 ![format string](../assets/images/format-strings/format-string-leak.png)
 
